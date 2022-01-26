@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define saveNome_tam 21
+
+/*
 typedef struct{
 
 }pokemon_corpo;
@@ -25,13 +28,46 @@ typedef struct{
 typedef struct{
 
 }pocao;
+*/
 
 void novoJogo(){
-    printf("Novo Jogo");
+    FILE *pont_arq;
+    pont_arq = fopen("save.txt", "a");
+    char nomeDo_save[saveNome_tam];
+
+    printf("Digite o nome do novo save\n");
+    fflush(stdin);
+    while(1){
+        scanf("%s", nomeDo_save);
+        int tamanho = strlen(nomeDo_save);
+
+        if(tamanho > saveNome_tam){
+            printf("O tamanho do nome do save não pode exceder %d", saveNome_tam);
+        }else{
+            break;
+        }
+    }
+
+    printf("...Criando um novo save...\n");
+
+    if(pont_arq == NULL){
+        printf("Erro na criação");
+    }else{
+        printf("Criado!");
+        fprintf(pont_arq, "%s", nomeDo_save);
+    }
+
+    fclose(pont_arq);
 }
 
 void carregarJogo(){
-    printf("Carregar Jogo");
+    FILE *pont_arq;
+    pont_arq = fopen("save.txt", "r");
+    char nomeDo_save[saveNome_tam];
+
+    while(fgets(nomeDo_save, saveNome_tam, pont_arq) != NULL)printf("%s", nomeDo_save);
+
+    fclose(pont_arq);
 }
 
 int main(){
@@ -64,12 +100,13 @@ int main(){
                 printf("\tDigite '1' para sobrescrever e começar um novo jogo\n");
                 printf("\tDigite qualquer tecla para cancelar\n");
                 fflush(stdin);
-                scanf("%d", novo_jogo);
+                scanf("%d", &novo_jogo);
 
                 novo_jogo == 1 ? novoJogo() : printf("Cancelar\n");
                 break;
             }else{
-                printf("...A aventura começa");
+                printf("...A aventura começa\n\n");
+                novoJogo();
             }
             break;
         case 2:
@@ -87,6 +124,5 @@ int main(){
         default:
             printf("Erro");
     }
-
     return 0;
 }
