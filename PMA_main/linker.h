@@ -1,0 +1,2 @@
+void novoJogo();
+void carregarJogo();

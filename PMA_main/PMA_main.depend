@@ -1,0 +1,15 @@
+# depslib dependency file v1.0
+1643244760 source:c:\users\usuario\desktop\ufc\cadeiras\semestre-2021.2\laboratório de programação\team work\pma_ufc\pma_main\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"linker.h"
+
+1643640524 source:c:\users\usuario\desktop\ufc\cadeiras\semestre-2021.2\laboratório de programação\team work\pma_ufc\pma_main\app.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"linker.h"
+
+1643244324 c:\users\usuario\desktop\ufc\cadeiras\semestre-2021.2\laboratório de programação\team work\pma_ufc\pma_main\linker.h
+
