@@ -24,22 +24,18 @@ typedef struct pokemon{
 }POKEMON;
 
 typedef struct pocao{
-    char nome[31];
+    char *nome;
     int status;
     int valor;
+
+    struct pocao *prox_item;
 }POCAO;
 
 typedef struct time{
-    POKEMON;
+    POKEMON *pk;
 
     struct time* prox_pok;
 }TIME;
-
-typedef struct inventario{
-    POCAO;
-
-    struct inventario* prox_item;
-}INVENTARIO;
 
 typedef struct oponente{
     char nome[opNome_tam];
@@ -49,7 +45,51 @@ typedef struct oponente{
 }OPENENTE;
 
 POKEMON *inicio = NULL;
-int tam = 0;
+TIME *inicio_time = NULL;
+POCAO *inicio_inv = NULL;
+int listaPoks_tam = 0;
+int listaItens_tam = 0;
+int pokecoins;
+FILE *pokecoins_arq;
+
+char* removerItem(int pos){
+    if(pos >= 0 && listaItens_tam > 0){
+        POCAO *lixo;
+        char *itemDescartado;
+        if(pos == 0){
+            lixo = inicio_inv;
+            inicio_inv = inicio_inv->prox_item;
+        }else{
+            POCAO *aux = inicio_inv;
+            int i;
+            for(i =0; i < pos -1; i++){
+                aux = aux->prox_item;
+            }
+            lixo = aux->prox_item;
+            aux->prox_item = aux->prox_item->prox_item;
+        }
+        itemDescartado = lixo->nome;
+        free(lixo);
+        listaPoks_tam--;
+        return itemDescartado;
+    }
+}
+
+void inventarioPessoal(char *itemNome, int itemStatus, int itemValor){
+    POCAO *novoItem = malloc(sizeof(POCAO));
+    novoItem->nome = itemNome;
+    novoItem->status = itemStatus;
+    novoItem->valor = itemValor;
+    novoItem->prox_item = NULL;
+
+    if(inicio_inv == NULL){
+        inicio_inv = novoItem;
+    }else{
+        novoItem->prox_item = inicio_inv;
+        inicio_inv = novoItem;
+    }
+    listaItens_tam++;
+}
 
 void listaPok(char *nome, int vel, int atk, int vida, int pos){
     POKEMON *novo = malloc (sizeof (POKEMON));
@@ -60,16 +100,16 @@ void listaPok(char *nome, int vel, int atk, int vida, int pos){
     novo->prox = NULL;
     novo->ant = NULL;
 
-    if(tam == 0 && pos == 0){
+    if(listaPoks_tam == 0 && pos == 0){
         inicio = novo;
-        tam++;
+        listaPoks_tam++;
     }else if(pos == 0){
         novo->prox = inicio;
         inicio->ant = novo;
         inicio = novo;
-        tam++;
-    }else if( pos > 0 && pos <= tam){
-        if(pos == tam) {
+        listaPoks_tam++;
+    }else if( pos > 0 && pos <= listaPoks_tam){
+        if(pos == listaPoks_tam) {
             POKEMON *aux = inicio;
             while(aux->prox != NULL) {
                 aux = aux->prox;
@@ -77,7 +117,7 @@ void listaPok(char *nome, int vel, int atk, int vida, int pos){
             aux->prox = novo;
             novo->ant = aux;
             aux = novo;
-            tam++;
+            listaPoks_tam++;
         }
         else{
             POKEMON *aux = inicio;
@@ -89,111 +129,181 @@ void listaPok(char *nome, int vel, int atk, int vida, int pos){
             novo->ant = aux->ant;
             aux->ant->prox = novo;
             aux->ant = novo;
-            tam++;
+            listaPoks_tam++;
         }
     }else{
     printf("insercao invalida! :/");
     }
 }
 
-void imprimir(POKEMON *inicio){
-    POKEMON *ponteiro = inicio;
-    printf("[ ");
-    while(ponteiro != NULL) {
-        printf("(%s),", ponteiro->pokNome);
-        ponteiro = ponteiro->prox;
+POKEMON* buscaPoks(int esc) {
+    POKEMON *aux = inicio;
+    while(aux != NULL){
+        for(int i = 0; i < esc; i++){
+            aux = aux->prox;
+        }
+        printf("%s, o escolhido é você\n", aux->pokNome);
+        return aux;
     }
-    printf(" ]");
+    printf("Esse pokémon não está na lista!");
+    return inicio;
+}
+
+POCAO* buscarItem(int esc){
+    POCAO *aux = inicio_inv;
+    while(aux != NULL){
+        for(int i = 0; i < esc; i++){
+            aux = aux->prox_item;
+        }
+        printf("Você utilizou uma %s\n", aux->nome);
+        return aux;
+    }
+    printf("Comando inválido\n");
+    return inicio_inv;
 }
 
 void formacao_time() {
+    int escolha;
+
+    TIME * novoPok = malloc(sizeof(TIME));
+    novoPok->prox_pok = NULL;
 
     listaPok("Charmander", 6, 20, 45, 0);
     listaPok("Squirtle", 9, 16, 43, 1);
     listaPok("Bulbassaur", 5, 28, 56, 2);
 
-    printf("Forme seu time!\n");
+    printf("\nDigite o ID do Pokémon que voçê quer no seu time\n");
+    scanf("%d", &escolha);
 
-    printf("Veja lista de Pokémons disponíveis\n");
+    novoPok->pk = buscaPoks(escolha);
 
-    imprimir(inicio);
-}
-
-/*
-int saldo() {
-    FILE* pont_arq;
-    int pokekoins = pokekoins + comprar();
-
-    if((pont_arq = fopen("data.bin", "rb+")) == NULL){
-        printf("Erro na leitura!\n");
-        exit(1);
+    if(inicio_time == NULL){
+        inicio_time = novoPok;
+    }else{
+        novoPok->prox_pok = inicio_time;
+        inicio_time = novoPok;
     }
-
-    fwrite(&pokekoins, sizeof(int), 1, pont_arq);
-
-    rewind(pont_arq);
-
-    fread(&pokekoins, sizeof(int), 1, pont_arq);
-
-    fclose(pont_arq);
-
-    return pokekoins;
 }
 
-void verItens();
-
-int comprar(int valor){
-    return valor;
+void verTime(){
+    TIME *ponteiro = inicio_time;
+    printf("| ");
+    while(ponteiro != NULL) {
+        printf("%s-", ponteiro->pk->pokNome);
+        ponteiro = ponteiro->prox_pok;
+    }
+    printf(" |");
 }
 
-int vender(int valor);
+int verSaldo(){
+    pokecoins_arq = fopen("saldo.bin", "rb");
 
-void loja(){
+    fread(&pokecoins, sizeof(int), 1, pokecoins_arq);
+
+    fclose(pokecoins_arq);
+
+    return pokecoins;
+}
+
+void comprar(int valor){
+    pokecoins_arq = fopen("saldo.bin", "wb+");
+
+    pokecoins = pokecoins - valor;
+
+    fwrite(&pokecoins, sizeof(int), 1, pokecoins_arq);
+
+    fclose(pokecoins_arq);
+}
+
+void vender(valor) {
+    int escolhaDo_jogador;
+    printf("Qual item você quer vender?\n");
+    scanf("%d", &escolhaDo_jogador);
+    printf("O item %s foi vendido!", removerItem(escolhaDo_jogador));
+
+    pokecoins_arq = fopen("saldo.bin", "wb+");
+
+    pokecoins = pokecoins + valor;
+
+    fwrite(&pokecoins, sizeof(int), 1, pokecoins_arq);
+
+    fclose(pokecoins_arq);
+}
+
+void pokemarket(){
     int escolhaDo_jogador;
 
-    POCAO smallPotion;
-    POCAO superPotion;
-    POCAO hyperPotion;
+    printf("Seja bem-vindo aventureiro! O que deseja comprar? \n");
 
-    smallPotion.status = 20;
-    smallPotion.valor = 30;
+    POCAO smp;
+    POCAO sp;
+    POCAO hp;
 
-    superPotion.status = 50;
-    superPotion.valor = 50;
+    smp.nome = "SmallPotion";
+    smp.status = 30;
+    smp.valor = 40;
 
-    hyperPotion.status = 100;
-    hyperPotion.valor = 70;
+    sp.nome = "SuperPotion";
+    sp.status = 50;
+    sp.valor = 60;
+
+    hp.nome = "HyperPotion";
+    hp.status = 70;
+    hp.valor = 80;
+
+    printf("**NO ESTOQUE**\n"
+           "[%s]--Valor(1): %d\n"
+           "[%s]--Valor(2): %d\n"
+           "[%s]--Valor(3): %d\n"
+           "(4) para vender item", smp.nome, smp.valor, sp.nome, sp.valor, hp.nome, hp.valor);
+    printf("\nDigite 0, se quiser sair da loja!\n");
 
     do{
-        printf("SP('1')-%d\n"
-               "SUP('2')-%d\n"
-               "HP('3')-%d\n"
-               "'0' para sair da loja", smallPotion.valor,
-                                        superPotion.valor,
-                                        hyperPotion.valor);
+        printf("->:  ");
         scanf("%d", &escolhaDo_jogador);
 
         switch(escolhaDo_jogador){
         case 1:
-            comprar(smallPotion.valor);
+            if(pokecoins < smp.valor){
+                printf("Você não tem coins suficientes");
+            }else{
+                comprar(smp.valor);
+                inventarioPessoal(smp.nome, smp.status, smp.valor);
+            }
             break;
         case 2:
-            comprar(superPotion.valor);
+            if(pokecoins < sp.valor){
+                printf("Você não tem coins suficientes");
+            }else{
+                comprar(sp.valor);
+                inventarioPessoal(sp.nome, sp.status, sp.valor);
+            }
             break;
         case 3:
-            comprar(hyperPotion.valor);
+            if(pokecoins < hp.valor){
+                printf("Você não tem coins suficientes");
+            }else{
+                comprar(hp.valor);
+                inventarioPessoal(hp.nome, hp.status, hp.valor);
+            }
             break;
-        case 0:
-            break;
-        default:
-            printf("Digite algo válido\n");
-            break;
+        case 4:
+            vender();
         }
     }while(escolhaDo_jogador != 0);
 }
-*/
 
-
+void verItens(){
+    int i = 1;
+    POCAO *ponteiro = inicio_inv;
+    printf("| ");
+    while(ponteiro != NULL) {
+        printf("%s(Digite %d para usar)-", ponteiro->nome, i);
+        ponteiro = ponteiro->prox_item;
+        i++;
+    }
+    printf(" |");
+}
 
 void menu(){
     int respostaDo_jogador;
@@ -201,7 +311,7 @@ void menu(){
     printf("\n\t\t MENU \n");
 
     do{
-        printf("\tDigite '1' para acessar  sua backpack\n"
+        printf("\n\n\tDigite '1' para acessar  sua backpack\n"
                "\tDigite '2' para ver a loja\n"
                "\tDigite '3' para ver seu time\n"
                "\tDigite '4' para ver seu saldo\n"
@@ -211,12 +321,16 @@ void menu(){
 
         switch(respostaDo_jogador){
         case 1:
+            verItens();
             break;
         case 2:
+            pokemarket();
             break;
         case 3:
+            verTime();
             break;
         case 4:
+            printf("Seu saldo atual é de |%d|", verSaldo());
             break;
         case 5:
             break;
@@ -232,8 +346,11 @@ void menu(){
 
 
 void novoJogo(){
+    int pokecoins_iniciais = 200;
     FILE *pont_arq;
     FILE *pont_arq_bd;
+    pokecoins_arq = fopen("saldo.bin", "wb+");
+
     pont_arq = fopen("save.txt", "w");
     char nomeJogador[saveNome_tam];
 
@@ -272,8 +389,28 @@ void novoJogo(){
     printf("BASE DE DADOS CRIADA\n");
     fclose(pont_arq_bd);
 
+    /*
+    CHAMAR DENTRO DA BATALHA
+    printf("Forme seu time!\n");
+    printf("Veja lista de Pokémons disponíveis\n");
+
+    printf("\t\tCharmander (ID=0)\n"
+           "\t\tSquirtle (ID=1)\n"
+           "\t\tBulbasaur (ID=2)\n");
+
+    printf("Escolha seus companheiros de batalha\n");
+    for(int i; i < 3; i++){
+        formacao_time();
+    }*/
+
+    printf("Bom, é sempre bom uma ajuda para começar...$$$$$TOME 200 POKECOINS!!\n");
+    fwrite(&pokecoins_iniciais, sizeof(int), 1, pokecoins_arq);
+
+    fclose(pokecoins_arq);
+
     menu();
 }
+
 
 void carregarJogo(){
     FILE *pont_arq;
@@ -286,8 +423,6 @@ void carregarJogo(){
     printf("...");
 
     fclose(pont_arq);
-
-    formacao_time();
 
     menu();
 }
